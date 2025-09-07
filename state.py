@@ -1,7 +1,7 @@
 import json
 from colors import Palette
 from device import Device
-from effects.stick_chase import Effect
+from effects.noti_up import Effect
 
 _INSTANCE:'RGBState|None' = None
 

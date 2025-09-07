@@ -8,6 +8,9 @@ class BaseEffect:
         self._TICK = initial_tick
         pass
 
+    def prepare(self):
+        pass
+
     def apply(self, t:int, palettes:list[Palette]):
         pass
 
