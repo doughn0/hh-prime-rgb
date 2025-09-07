@@ -1,0 +1,16 @@
+{
+    "driver": "h700",
+    "leds": 8,
+    "target_fps": 30,
+    "zones": {
+        "stick": {
+            "type": "Ring",
+            "leds": 8,
+            "pos": [0,0],
+            "led_indexes": [0, 1, 2, 3, 4, 5, 6, 7],
+            "led_angles": [20, 67, 113, 160, 200, 247, 393, 340],
+            "input" : [0, 1],
+            "input_polarity": ["-", "+"]
+        }
+    }
+}

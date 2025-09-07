@@ -1,0 +1,4 @@
+config.json
+.stfolder
+__pycache__
+*.pyc

@@ -1,0 +1,23 @@
+{
+    "driver": "h700",
+    "leds": 16,
+    "target_fps": 30,
+    "zones": {
+        "left_stick": {
+            "type": "Ring",
+            "leds": 8,
+            "pos": [0,0],
+            "led_indexes": [8, 15, 14, 13, 12, 11, 10, 9],
+            "input": [0, 1],
+            "input_polatity": ["-", "-"]
+        },
+        "right_stick": {
+            "type": "Ring",
+            "leds": 8,
+            "pos": [0,0],
+            "led_indexes": [2, 1, 0, 7, 6, 5, 4, 3],
+            "input" : [2, 3],
+            "input_polatity": ["+", "+"]
+        }
+    }
+}
