@@ -26,6 +26,7 @@ class Effect(BaseEffect):
                 if s['value'] > 0.3:
                     _p = (90 - abs(loop_d(r.ANGLES[x], s['angle'], 360))) / 90
                     if _p > 0:
+                        v = int(s['value']*99) / 99 
                         __p = (_p*((s['value']-0.3)/0.7))
                         r[x] = mix(p.fg, __p, p.bg, self.bg_scale*(1-__p))
                     else:

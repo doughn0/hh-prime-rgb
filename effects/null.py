@@ -2,7 +2,7 @@ from effects._base_effect import BaseEffect
 from device import Device
 
 _metadata = {
-    'name': 'Static',
+    'name': 'Empty',
     'reqs': []
 }
 
@@ -12,8 +12,7 @@ class Effect(BaseEffect):
     
     def apply(self, t, palettes):
         for z in self.dev.A:
-            p = palettes[z.PAL_ID]
-            z.all(p.bg)
+            self.dev.Raw.all([0,0,0])
     
     def framekey(self, t):
         return 0

@@ -10,17 +10,15 @@ STATE = RGBState.get()
 
 def main():
     global TICK
-    dev = Device()
-
     log = False
-
     STATE.load_config()
 
     while True:
         
         _start = time_ns() // 1_000
 
-        STATE.render(TICK)
+        if TICK > 0:
+            STATE.render(TICK)
 
         _rend = time_ns() // 1_000
 

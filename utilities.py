@@ -4,6 +4,28 @@ from functools import lru_cache
 from math import sin, cos, pi, sqrt, tan, radians
 import itertools
 
+def generate_brightness_list(size, max_val):
+    """
+    Generates a list of integers with a logarithmic curve.
+    """
+    brightness_list = []
+    for i in range(size):
+        # Scale i to a 0-1 range and apply a power function.
+        # This creates the logarithmic curve.
+        normalized_val = (i / (size - 1))**2.5
+        
+        # Scale to the 0-255 range and round to the nearest integer.
+        integer_val = round(normalized_val * max_val)
+        brightness_list.append(integer_val)
+
+    for i in range(size):
+        if brightness_list[i] < i: brightness_list[i] = i
+    return brightness_list
+
+def hex_to_rgb(hex_color):
+    hex_color = hex_color.lstrip('#')
+    return [int(hex_color[i:i+2], 16) for i in (0, 2, 4)]
+
 def loop_d(a, b, loop):
     v = abs(a-b)
     p = 1 if a > b else -1
@@ -74,7 +96,7 @@ def mix(c1, s1, c2, s2):
 
 def dimm(c1, s1):
     ret = [
-        (c1[0]*s1), (c1[1]*s1), (c1[2]*s1),
+        int(c1[0]*s1), int(c1[1]*s1), int(c1[2]*s1),
     ]
     return ret
 
@@ -93,7 +115,7 @@ def bucketize(l, bc, f):
 @lru_cache(4000)
 def color_upscale(c):
     m = (255 / max(c))
-    return dimm(c, int(255*m))
+    return dimm(c, int(m))
 
 def encode_binary(d):
     return bytes(itertools.chain(*d))

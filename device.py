@@ -1,8 +1,7 @@
 import json
+import confloader
 
-jsonl = open('../device.conf').read().strip()
-
-config = json.load(open('device_configs/'+jsonl))
+config = json.load(open('device_configs/'+confloader.identify_device()+'.json'))
 
 if config['driver'] == 'a133':
     from drivers.a133.RGBDriver import RGBDriver
@@ -16,6 +15,7 @@ class Device:
         self.LED_COUNT = config['leds']
 
         self.FB0 = [0, 0, 0] * config['leds']
+        self.BR:int = 255
 
         self.nuke_savestates()
     
@@ -44,7 +44,7 @@ class Device:
         self.A = self.Z.Leds + self.Z.Rings
 
     def savestate(self, key):
-        self.CACHED_BYTESTREAM = self.driver.render(self.FB0)
+        self.CACHED_BYTESTREAM = self.render()
         self.CACHE[key] = self.CACHED_BYTESTREAM
         self.CACHE_LAST_KEY = key
     
@@ -64,6 +64,21 @@ class Device:
         self.CACHED_BYTESTREAM = None
         return False
 
+    def render(self):
+        return self.driver.render([(a*self.BR) // 255 for a in self.FB0])
+        
+    def write(self) -> None:
+        bytestream = self.CACHED_BYTESTREAM
+        if bytestream is None:
+            bytestream = self.render()
+        if not self.CACHE_SKIP:
+            self.driver.write(bytestream)
+        else:
+            self.CACHE_SKIP = False
+
+    def close(self) -> None:
+        self.driver.close()
+    
     def __getitem__(self, index) -> list[int]:
         return [
             self.FB0[index*3],
@@ -75,18 +90,6 @@ class Device:
         self.FB0[index*3] = c[0]
         self.FB0[index*3+1] = c[1]
         self.FB0[index*3+2] = c[2]
-        
-    def write(self) -> None:
-        bytestream = self.CACHED_BYTESTREAM
-        if bytestream is None:
-            bytestream = self.driver.render(self.FB0)
-        if not self.CACHE_SKIP:
-            self.driver.write(bytestream)
-        else:
-            self.CACHE_SKIP = False
-
-    def close(self) -> None:
-        self.driver.close()
 
 class ZoneStore:
     def __init__(self):

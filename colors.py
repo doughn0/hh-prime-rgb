@@ -5,11 +5,15 @@ from copy import copy
 SMOOTH = 0.1
 
 class Palette():
-    def __init__(self, bg:list[int], fg:list[int]) -> None:
+    def __init__(self, bg:list[int], fg:list[int]|None=None) -> None:
         self.bg = bg
-        self.fg = fg
         self._bg = bg
-        self._fg = fg
+        if fg is None:
+            self.fg = bg
+            self._fg = bg
+        else:
+            self.fg = fg
+            self._fg = fg
 
     def __eq__(self, p2) -> bool:
         return self.fg == p2.fg and self.bg == p2.bg
@@ -25,6 +29,10 @@ class Palette():
             self.fg = [int(round(a)) for a in self._fg]
             return False
         return True
+
+GREEN = Palette([0,255,0])
+RED = Palette([255,0,0])
+BLUE = Palette([0,0,255])
 
 colors = {
     "Cyan" : [0, 200, 200],
