@@ -1,6 +1,7 @@
 
 import os
 import termios
+from time import sleep
 
 SERIAL_PORT = '/dev/ttyS5'
 
@@ -21,6 +22,10 @@ class RGBDriver:
     header = [1, 255] # mode 1, which is the mode where you can do raw rendering and max brightness (we will do that manually one layer above...)
 
     def __init__(self, extra) -> None:
+
+        with open('/sys/class/power_supply/axp2202-battery/mcu_pwr', 'w') as _temp:
+            _temp.write('1\n')
+
         
         ## set up the serial port
         self.rgb_serial = os.open(SERIAL_PORT, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK) # type: ignore
@@ -45,6 +50,10 @@ class RGBDriver:
 
         # Set new attributes immediately
         termios.tcsetattr(self.rgb_serial, termios.TCSANOW, attrs)
+
+        os.write(self.rgb_serial,  b"\x01\xFF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
+        
+        sleep(0.1)
 
     # expects a list of rgb values [255,0,0, ... ]
     def render(self, rgb_data:list[int]) -> bytes:

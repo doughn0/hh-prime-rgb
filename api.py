@@ -32,6 +32,23 @@ def animation():
             return "Error while processing Command:\n[name] [count] [hex_color]\n"
     return ""
 
+
+batt_last = '0'
+@route("/update-battery-state", method='POST')
+def battery():
+    global batt_last
+    req = request.body.read().decode().split() # pyright: ignore[reportAttributeAccessIssue]
+    if req[1] != batt_last and req[1] == '1':
+        STATE.events.append(Event(EventType.FadeOut))
+        STATE.events.append(Event(EventType.RunEffect, 'noti_up', 3, GREEN))
+    batt_last = req[1]
+    pass
+
+@route("/update-screen-state", method='POST')
+def screen():
+    pass
+
+
 def run_api():
     run(host='localhost', port=1235)
 

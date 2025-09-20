@@ -5,6 +5,7 @@ from device import Device
 from effect_store import STORE
 from effects._base_effect import BaseEffect
 from utilities import generate_brightness_list
+from confloader import CONFIG, refresh as conf_refresh
 
 BRIGHTNESS = generate_brightness_list(15, 255)
 MAX_BR = len(BRIGHTNESS)-1
@@ -26,8 +27,8 @@ class RGBState:
         self.FPS = 30
         self.FRTM = int(1000 / self.FPS)
 
-        self._mode = 'null'
-        self.modes:list[BaseEffect] = [STORE['null']['class'](self.DEV, self._tick)]
+        self._mode = 'static'
+        self.modes:list[BaseEffect] = [STORE['static']['class'](self.DEV, self._tick)]
         self.events:list[Event] = [
             Event(EventType.RunEffect, 'noti_round', 1, Palette(bg=[255,255,255], fg=[255,255,255])),
             Event(EventType.RunEffect, 'noti_blink_off', 1, Palette(bg=[255,255,255], fg=[255,255,255]))
@@ -101,21 +102,23 @@ class RGBState:
         self.DEV.write()
     
     def load_config(self):
-        config = json.load(open('config.json'))
+        conf_refresh()
 
-        print(config)
+        print(CONFIG)
         self.DEV.nuke_savestates()
 
-        if config['mode'] != self._mode:
+        if CONFIG['mode'] != self._mode:
             self.events.append(Event(EventType.FadeOut))
-            self.events.append(Event(EventType.ChangeMode, config['mode']))
-            self._mode = config['mode']
+            self.events.append(Event(EventType.ChangeMode, CONFIG['mode']))
+            self._mode = CONFIG['mode']
 
-        raw_palette = config['palette']
+        self._target_br = CONFIG['brightness']
+
+        raw_palette = CONFIG['palette']
         self._target_palette = [Palette(*raw_palette), Palette(*raw_palette)]
-        if config['palette_swap']:
+        if CONFIG['palette_swap']:
             self._target_palette = [p.swap() for p in self._target_palette]
-        if config['palette_swap_secondary']:
+        if CONFIG['palette_swap_secondary']:
             self._target_palette[1] = self._target_palette[1].swap()
     
     def smooth_conf(self):

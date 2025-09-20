@@ -8,6 +8,8 @@ if config['driver'] == 'a133':
 if config['driver'] == 'h700':
     from drivers.h700.RGBDriver import RGBDriver
 
+print("Loaded Driver:", RGBDriver) # pyright: ignore[reportPossiblyUnboundVariable]
+
 class Device:
     def __init__(self) -> None:
         self.CONFIG = config

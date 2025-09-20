@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Configuration
+LOCK_FILE="/userdata/rgb_daemon_monitor.lock"
+DAEMON_PATH="/userdata/roms/tools/hh-prime-rgb"
+DAEMON_COMMAND="python rgb_daemon.py"
+DAEMON_PROCESS_NAME="rgb_daemon.py"
+DAEMON_CURL_URL="http://localhost:1235"
+LAST_CONF_MOD_TIME=0
+
+# Check for an existing lock file
+if pgrep -f "$DAEMON_COMMAND" > /dev/null; then
+    echo "Another instance is running. Sending reload command and exiting."
+    curl -s "$DAEMON_CURL_URL/reload-config"
+    exit 0
+fi
+
+# Check if the RGB daemon is running
+if ! pgrep -f "$DAEMON_COMMAND" > /dev/null; then
+    echo "RGB daemon not running. Starting it."
+    cd /userdata/roms/tools/hh-prime-rgb
+    #echo 1 > /sys/class/power_supply/axp2202-battery/mcu_pwr
+    #sleep 1
+    nohup python rgb_daemon.py &>/dev/null &
+    echo "RGB daemon started."
+fi
+
+BATTERY_DIR=$(ls -d /sys/class/power_supply/*{BAT,bat}* 2>/dev/null | head -1)
+
+# Main infinite loop
+while true; do
+    # Get current time for loop timing
+    start_time=$(date +%s)
+    
+    # Check for batocera.conf changes every 5 seconds
+    CONF_FILE="/userdata/system/batocera.conf"
+    if [ -f "$CONF_FILE" ]; then
+        current_conf_mod_time=$(stat -c %Y "$CONF_FILE")
+        if [ "$current_conf_mod_time" -gt "$LAST_CONF_MOD_TIME" ]; then
+            echo "batocera.conf has changed. Reloading config."
+            curl -s "$DAEMON_CURL_URL/reload-config"
+            LAST_CONF_MOD_TIME=$current_conf_mod_time
+        fi
+    fi
+
+    # Check battery state every 10 seconds
+    if [ $((start_time % 10)) -eq 0 ]; then
+        if [ -n "$BATTERY_DIR" ]; then
+            KEY_BATTERY_CAPACITY="$BATTERY_DIR/capacity"
+            KEY_BATTERY_STATUS="$BATTERY_DIR/status"
+            if [ -f "$KEY_BATTERY_CAPACITY" ] && [ -f "$KEY_BATTERY_STATUS" ]; then
+                PERCENTAGE=$(cat "$KEY_BATTERY_CAPACITY")
+                STATUS=$(cat "$KEY_BATTERY_STATUS")
+                
+                # Normalize status to 0 or 1
+                CHARGING=0
+                if [[ "$STATUS" == "Charging" ]]; then
+                    CHARGING=1
+                fi
+                
+                echo "Battery state: $PERCENTAGE $STATUS"
+                curl -s "$DAEMON_CURL_URL/update-battery-state" -d "$PERCENTAGE $CHARGING"
+            fi
+        fi
+    fi
+
+    # Check display brightness every 10 seconds
+    if [ $((start_time % 10)) -eq 0 ]; then
+        BRIGHTNESS=$(batocera-brightness)
+        if [ -n "$BRIGHTNESS" ]; then
+            echo "Display brightness: $BRIGHTNESS"
+            curl -s "$DAEMON_CURL_URL/update-screen-state" -d "$BRIGHTNESS"
+        fi
+    fi
+    
+    # Sleep for 1 second to avoid a busy loop, the modulo checks handle the timing
+    sleep 1
+done

@@ -10,10 +10,14 @@ class RGBDriver:
 
         with open('/sys/class/led_anim/max_scale', 'w') as _temp:
             _temp.write('255')
+        with open('/sys/class/led_anim/effect_rgb_hex_lr', 'w') as _temp:
+            _temp.write('000000')
+        with open('/sys/class/led_anim/effect_rgb_hex_m', 'w') as _temp:
+            _temp.write('000000')
         with open('/sys/class/led_anim/effect_enable', 'w') as _temp:
             _temp.write('0')
 
-        self.rgb_serial = os.open('/sys/class/led_anim/frame', os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK) # type: ignore
+        self.rgb_sink = os.open('/sys/class/led_anim/frame', os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK) # type: ignore
 
     # expects a list of rgb values [255,0,0, ... ]
     def render(self, rgb_data:list[int]) -> bytes:
@@ -28,10 +32,10 @@ class RGBDriver:
         return bytes(rgb_data_)
 
     def write(self, led_data:bytes):
-        os.write(self.rgb_serial, led_data)
+        os.write(self.rgb_sink, led_data)
     
     def close(self) -> None:        
-        os.close(self.rgb_serial)
+        os.close(self.rgb_sink)
 
     
 
