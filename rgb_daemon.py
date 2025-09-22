@@ -49,10 +49,7 @@ def main():
         TICK = int(nTICK)
 
 t1 = threading.Thread(target=main)
-t2 = threading.Thread(target=run_api)
+t2 = threading.Thread(target=run_api, daemon=True)
 
 t1.start()
 t2.start()
-
-t1.join()
-t2.join()

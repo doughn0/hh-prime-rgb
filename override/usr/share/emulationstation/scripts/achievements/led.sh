@@ -4,7 +4,6 @@
 if ! knulli-board-capability "rgb"; then
     exit 1
 fi
-exit
 
 KEY_LED_RETRO_ACHIEVEMENTS="led.retroachievements"
 EFFECT_ON=1

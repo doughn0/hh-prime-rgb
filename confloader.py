@@ -1,26 +1,52 @@
 import os
 import re
 
+from colors import get_palette
+
 CONFIG = {
-  "fps": 30,
-  "mode": "stick_chase",
-  "brightness": 14,
-  "palette": [
-    [
-      255,
-      0,
-      255
-    ],
-    [
-      0,
-      255,
-      255
-    ]
-  ],
-  "palette_swap": False,
-  "palette_swap_secondary": False,
-  "speed": 0
+    "fps": 30,
+    "mode": "stick_chase",
+    "brightness": 14,
+    "palette": [[255, 0, 255], [0, 255, 255]],
+    "palette_swap": False,
+    "palette_swap_secondary": False,
+    "speed": 0
 }
+
+palettes = [
+    # --- High Contrast (Color + Neutral) ---
+    ["PRed", "White"],
+    ["PBlue", "Black"],
+    ["Yellow", "Black"],
+    ["Magenta", "White"],
+    ["Cyan", "Black"],
+    ["Green", "White"],
+    ["Orange", "Black"],
+    ["Violet", "Silver"],
+    ["Gold", "Black"],
+    ["Pink", "Silver"],
+
+    # --- Complementary & Contrasting Hues ---
+    ["Orange", "Blue"],
+    ["Red", "Cyan"],
+    ["Green", "Magenta"],
+    ["Yellow", "Violet"],
+    ["Gold", "PBlue"],
+
+    # --- Analogous & Similar Hues ---
+    ["Cyan", "Aqua"],
+    ["Green", "Mint"],
+    ["Red", "Pink"],
+    ["Orange", "Gold"],
+    ["Blue", "Violet"],
+    
+    # --- Other Vibrant Pairings ---
+    ["Magenta", "Aqua"],
+    ["Pink", "Mint"],
+    ["Red", "Gold"],
+    ["PBlue", "Yellow"],
+    ["Violet", "Pink"],
+]
 
 KEY_LED_MODE="led.mode"
 KEY_LED_BRIGHTNESS="led.brightness"
@@ -34,8 +60,11 @@ KEY_LED_BATTERY_CHARGING_ENABLED="led.battery.charging"
 mode_map = {
     '0' : 'null',
     '1' : 'static',
+    '2' : 'shimmer',
     '3' : 'stick_chase',
-    '5' : 'rainbow'
+    '4' : 'wave',
+    '5' : 'rainbow',
+    '6' : 'null'
 }
 
 def identify_device():
@@ -60,3 +89,10 @@ def refresh(key:str|None=None):
     if key is None or key == KEY_LED_BRIGHTNESS:
         val = get_param(KEY_LED_BRIGHTNESS)
         CONFIG['brightness'] = (int(val) // 7)
+    
+    if key is None or key == KEY_LED_COLOUR:
+        val1, val2, val3 = [int(x) for x in get_param(KEY_LED_COLOUR).split()]
+        sp = palettes[(val1//10)%len(palettes)]
+        CONFIG['palette'] = get_palette('-'.join(sp))
+        CONFIG['palette_swap'] = val2 > 0
+        CONFIG['palette_swap_secondary'] = val3 > 0

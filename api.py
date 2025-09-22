@@ -48,6 +48,11 @@ def battery():
 def screen():
     pass
 
+@get("/kill")
+def kill():
+    STATE.events.append(Event(EventType.FadeOut))
+    STATE.events.append(Event(EventType.Die))
+
 
 def run_api():
     run(host='localhost', port=1235)

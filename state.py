@@ -44,6 +44,9 @@ class RGBState:
     def manage_events(self):
         if len(self.events) > 0:
             event = self.events[0]
+            if event.type == EventType.Die:
+                self.DEV.close()
+                quit()
             if event.type == EventType.FadeIn:
                 self.DEV.nuke_savestates()
                 self._target_tr = MAX_BR
@@ -143,6 +146,7 @@ class RGBState:
 _INSTANCE:RGBState|None = None
 
 class EventType(Enum):
+    Die = -1
     ChangeMode = 0
     RunEffect = 1
     FadeOut = 10

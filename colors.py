@@ -2,7 +2,7 @@
 from utilities import mix
 from copy import copy
 
-SMOOTH = 0.1
+SMOOTH = 0.2
 
 class Palette():
     def __init__(self, bg:list[int], fg:list[int]|None=None) -> None:
