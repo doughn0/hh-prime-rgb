@@ -44,7 +44,7 @@ while true; do
     fi
 
     # Check battery state every 10 seconds
-    if [ $((start_time % 10)) -eq 0 ]; then
+    if [ $((start_time % 5)) -eq 0 ]; then
         if [ -n "$BATTERY_DIR" ]; then
             KEY_BATTERY_CAPACITY="$BATTERY_DIR/capacity"
             KEY_BATTERY_STATUS="$BATTERY_DIR/status"
@@ -52,24 +52,17 @@ while true; do
                 PERCENTAGE=$(cat "$KEY_BATTERY_CAPACITY")
                 STATUS=$(cat "$KEY_BATTERY_STATUS")
                 
-                # Normalize status to 0 or 1
-                CHARGING=0
-                if [[ "$STATUS" == "Charging" ]]; then
-                    CHARGING=1
-                fi
-                
                 echo "Battery state: $PERCENTAGE $STATUS"
-                curl -s "$DAEMON_CURL_URL/update-battery-state" -d "$PERCENTAGE $CHARGING"
+                curl -s "$DAEMON_CURL_URL/update-battery-state" -d "$PERCENTAGE $STATUS"
             fi
         fi
     fi
 
     # Check display brightness every 10 seconds
-    if [ $((start_time % 10)) -eq 0 ]; then
+    if [ $((start_time % 5)) -eq 0 ]; then
         BRIGHTNESS=$(batocera-brightness)
-        if [ -n "$BRIGHTNESS" ]; then
-            echo "Display brightness: $BRIGHTNESS"
-            curl -s "$DAEMON_CURL_URL/update-screen-state" -d "$BRIGHTNESS"
+        if [ $(batocera-settings-get "led.brightness.adaptive") -eq 1 ]; then
+            batocera-settings-set led.brightness "$BRIGHTNESS"
         fi
     fi
     

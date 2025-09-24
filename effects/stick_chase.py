@@ -11,7 +11,7 @@ _metadata = {
 class Effect(BaseEffect):
     def __init__(self, dev: Device, initial_tick: int) -> None:
         super().__init__(dev, initial_tick)
-        self.bg_scale = 0.3
+        self.bg_scale = 0.8
         self.ST = StickState(dev.CONFIG['zones'])
     
     def prepare(self):

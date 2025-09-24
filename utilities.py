@@ -3,6 +3,10 @@ from functools import lru_cache
 
 from math import sin, cos, pi, sqrt, tan, radians
 import itertools
+from typing import Union
+
+type Numeric = Union[int, float]
+type Color = list[Numeric]
 
 def generate_brightness_list(size, max_val):
     """
@@ -57,48 +61,43 @@ sin100_t = [sin(i/100 * pi) for i in range(200)]
 def sin100(i):
     return sin100_t[i%200]
 
-@lru_cache(4000)
-def hsv_fl(h: float, s: float, v: float) -> tuple[float, float, float]:
+def hsv_fl(h: Numeric, s: Numeric, v: Numeric) -> Color:
     if s:
         if h == 1.0:
             h = 0.0
         i = int(h * 6.0)
         f = h * 6.0 - i
 
-        w = int(255*( v * (1.0 - s) ))
-        q = int(255*( v * (1.0 - s * f) ))
-        t = int(255*( v * (1.0 - s * (1.0 - f)) ))
-        v = int(255*v)
+        w = ( v * (1.0 - s) )
+        q = ( v * (1.0 - s * f) )
+        t = ( v * (1.0 - s * (1.0 - f)) )
+        v = v
 
         if i == 0:
-            return (v, t, w)
+            return [v, t, w]
         if i == 1:
-            return (q, v, w)
+            return [q, v, w]
         if i == 2:
-            return (w, v, t)
+            return [w, v, t]
         if i == 3:
-            return (w, q, v)
+            return [w, q, v]
         if i == 4:
-            return (t, w, v)
+            return [t, w, v]
         if i == 5:
-            return (v, w, q)
-        return (v, v, v)
+            return [v, w, q]
+        return [v, v, v]
     else:
-        return (v, v, v)
+        return [v, v, v]
     
-def mix(c1, s1, c2, s2):
-    ret = [
+def mix(c1:Color, s1:Numeric, c2:Color, s2:Numeric) -> Color:
+    return [
         (c1[0]*s1 + c2[0]*s2),
         (c1[1]*s1 + c2[1]*s2),
-        (c1[2]*s1 + c2[2]*s2),
+        (c1[2]*s1 + c2[2]*s2)
     ]
-    return ret
 
-def dimm(c1, s1):
-    ret = [
-        int(c1[0]*s1), int(c1[1]*s1), int(c1[2]*s1),
-    ]
-    return ret
+def dimm(c1:Color, s1:Numeric) -> Color:
+    return [c1[0]*s1, c1[1]*s1, c1[2]*s1]
 
 def bucketize(l, bc, f):
         if bc < 1: bc = 1
@@ -112,10 +111,9 @@ def bucketize(l, bc, f):
                 acc = 0
         return ret
 
-@lru_cache(4000)
-def color_upscale(c):
-    m = (255 / max(c))
-    return dimm(c, int(m))
+def color_upscale(c:Color) -> Color:
+    m = 1/max(c)
+    return dimm(c, m)
 
 def encode_binary(d):
     return bytes(itertools.chain(*d))

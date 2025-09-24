@@ -1,37 +1,42 @@
 from enum import Enum
 import json
-from colors import Palette
+from colors import BLUE, GREEN, RED, WHITE, Palette
 from device import Device
 from effect_store import STORE
 from effects._base_effect import BaseEffect
 from utilities import generate_brightness_list
 from confloader import CONFIG, refresh as conf_refresh
 
-BRIGHTNESS = generate_brightness_list(15, 255)
-MAX_BR = len(BRIGHTNESS)-1
-
-print(BRIGHTNESS)
+MAX_BR = 100
 
 class RGBState:
     def __init__(self) -> None:
         self.DEV = Device()
-        self._br = MAX_BR
-        self._tr = MAX_BR
+        self._br = 100
+        self._tr = 100
         self._palette = [Palette([0,0,0], [0,0,0]), Palette([0,0,0], [0,0,0])]
         self._target_palette = [Palette([0,0,0], [0,0,0]), Palette([0,0,0], [0,0,0])]
-        self._target_br = MAX_BR
-        self._target_tr = MAX_BR
+        self._target_br = 100
+        self._target_tr = 100
+
+        # Flip true if config changes
+        self._idle = False
 
         self._tick = 0
 
         self.FPS = 30
+        #self.FPS = 1
         self.FRTM = int(1000 / self.FPS)
 
         self._mode = 'static'
         self.modes:list[BaseEffect] = [STORE['static']['class'](self.DEV, self._tick)]
         self.events:list[Event] = [
-            Event(EventType.RunEffect, 'noti_round', 1, Palette(bg=[255,255,255], fg=[255,255,255])),
-            Event(EventType.RunEffect, 'noti_blink_off', 1, Palette(bg=[255,255,255], fg=[255,255,255]))
+            #Event(EventType.RunEffect, 'noti_up', 1, RED),
+            #Event(EventType.RunEffect, 'noti_up', 1, GREEN),
+            #Event(EventType.RunEffect, 'noti_up', 1, BLUE),
+            Event(EventType.RunEffect, 'noti_round', 1, WHITE),
+            Event(EventType.RunEffect, 'noti_blink_off', 1, WHITE),
+            Event(EventType.FadeIn)
         ]
     
     @staticmethod
@@ -43,7 +48,12 @@ class RGBState:
 
     def manage_events(self):
         if len(self.events) > 0:
+            print([f"{a.type.name}/{a.payload}: {a.timer} {a.running}" for a in self.events])
+            self._idle = False
             event = self.events[0]
+            if event.type == EventType.LoadConfig:
+                self.load_config()
+                self.events.pop(0)
             if event.type == EventType.Die:
                 self.DEV.close()
                 quit()
@@ -51,13 +61,17 @@ class RGBState:
                 self.DEV.nuke_savestates()
                 self._target_tr = MAX_BR
                 self.events.pop(0)
+                return True
             if event.type == EventType.FadeOut:
                 if not event.running:
                     self.DEV.nuke_savestates()
                     self._target_tr = 0
                     event.running = True
-                if(int(self._tr) == 0):
-                    self.events.pop(0)
+                    event.timer = 4
+                if(self._tr == 0):
+                    event.timer -= 1
+                    if event.timer == 0:
+                        self.events.pop(0)
             if event.type == EventType.ChangeMode:
                 self.modes[0] = STORE[event.payload]['class'](self.DEV, self._tick)
                 self._tr = 0
@@ -69,6 +83,7 @@ class RGBState:
                     self.DEV.nuke_savestates()
                     self._tr = MAX_BR
                     self._target_tr = MAX_BR
+                    self.apply_brightness()
                     event.running = True
                     self.modes.append(STORE[event.payload]['class'](self.DEV, self._tick))
                     event.timer = event.repeat * STORE[event.payload]['metadata']['duration']
@@ -78,8 +93,9 @@ class RGBState:
                         self.events.pop(0)
                         self.modes.pop()
                         self._tr = 0
+                        self._target_tr = 0
+                        self.apply_brightness()
                         self.DEV.nuke_savestates()
-                        self.events.append(Event(EventType.FadeIn))
                         return True
 
     def get_palette(self):
@@ -92,7 +108,15 @@ class RGBState:
         self._tick = TICK
         while self.manage_events(): pass
         mode = self.modes[-1]
-        conf_done = self.smooth_conf()
+        conf_done = True
+
+        if not self._idle:
+            conf_done = self.smooth_conf()
+            if conf_done:
+                self._idle = True
+            #print("Idle", self._idle)
+
+        #print("cd:", conf_done, "id:", self._idle, "br:", int(self.DEV.BR*100))
         mode.prepare()
 
         framekey = mode.framekey(TICK)
@@ -111,8 +135,10 @@ class RGBState:
         self.DEV.nuke_savestates()
 
         if CONFIG['mode'] != self._mode:
-            self.events.append(Event(EventType.FadeOut))
+            if self._mode != "null":
+                self.events.append(Event(EventType.FadeOut))
             self.events.append(Event(EventType.ChangeMode, CONFIG['mode']))
+            self.events.append(Event(EventType.FadeIn))
             self._mode = CONFIG['mode']
 
         self._target_br = CONFIG['brightness']
@@ -124,6 +150,9 @@ class RGBState:
         if CONFIG['palette_swap_secondary']:
             self._target_palette[1] = self._target_palette[1].swap()
     
+    def apply_brightness(self):
+        self.DEV.BR = self._tr*self._br*self._br *self._br / (100**4)
+
     def smooth_conf(self):
 
         done = True
@@ -136,10 +165,11 @@ class RGBState:
             done = False
 
         if self._tr != self._target_tr:
-            self._tr += -1 if self._target_tr < self._tr else 1
+            self._tr += -10 if self._target_tr < self._tr else 10
             done = False
         
-        self.DEV.BR = BRIGHTNESS[int(self._tr*self._br) // len(BRIGHTNESS)]
+        if not done:
+            self.apply_brightness()
         
         return done
 
@@ -147,8 +177,9 @@ _INSTANCE:RGBState|None = None
 
 class EventType(Enum):
     Die = -1
-    ChangeMode = 0
-    RunEffect = 1
+    LoadConfig = 0
+    ChangeMode = 1
+    RunEffect = 5
     FadeOut = 10
     FadeIn = 11
 

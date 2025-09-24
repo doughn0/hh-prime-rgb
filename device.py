@@ -17,7 +17,7 @@ class Device:
         self.LED_COUNT = config['leds']
 
         self.FB0 = [0, 0, 0] * config['leds']
-        self.BR:int = 255
+        self.BR:float = 100
 
         self.nuke_savestates()
     
@@ -67,7 +67,7 @@ class Device:
         return False
 
     def render(self):
-        return self.driver.render([(a*self.BR) // 255 for a in self.FB0])
+        return self.driver.render([int(a*a*self.BR*255+0.4) for a in self.FB0])
         
     def write(self) -> None:
         bytestream = self.CACHED_BYTESTREAM
@@ -81,14 +81,14 @@ class Device:
     def close(self) -> None:
         self.driver.close()
     
-    def __getitem__(self, index) -> list[int]:
+    def __getitem__(self, index) -> list[float]:
         return [
             self.FB0[index*3],
             self.FB0[index*3+1],
             self.FB0[index*3+2]
         ]
     
-    def __setitem__(self, index:int, c:list[int]):
+    def __setitem__(self, index:int, c:list[float]):
         self.FB0[index*3] = c[0]
         self.FB0[index*3+1] = c[1]
         self.FB0[index*3+2] = c[2]
@@ -111,21 +111,21 @@ class RawZone:
     
     def all(self, c) -> None:
         for index in self._ind: 
-            self._dev.FB0[index*3] = int(c[0])
-            self._dev.FB0[index*3+1] = int(c[1])
-            self._dev.FB0[index*3+2] = int(c[2])
+            self._dev.FB0[index*3] = c[0]
+            self._dev.FB0[index*3+1] = c[1]
+            self._dev.FB0[index*3+2] = c[2]
     
-    def __getitem__(self, index) -> list[int]:
+    def __getitem__(self, index) -> list[float]:
         return [
             self._dev.FB0[index*3],
             self._dev.FB0[index*3+1],
             self._dev.FB0[index*3+2]
         ]
     
-    def __setitem__(self, index:int, c:list[int]) -> None:
-        self._dev.FB0[self._ind[index]*3] = int(c[0])
-        self._dev.FB0[self._ind[index]*3+1] = int(c[1])
-        self._dev.FB0[self._ind[index]*3+2] = int(c[2])
+    def __setitem__(self, index:int, c:list[float]) -> None:
+        self._dev.FB0[self._ind[index]*3] = c[0]
+        self._dev.FB0[self._ind[index]*3+1] = c[1]
+        self._dev.FB0[self._ind[index]*3+2] = c[2]
 
 class LineZone(RawZone):
     def __init__(self, dev:Device, zone_config):

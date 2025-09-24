@@ -1,23 +1,23 @@
 from math import sqrt
+from colors import Color
 from effects._base_effect import BaseEffect
 from device import Device
-from utilities import dimm, easeOutQuart, generate_brightness_list, mix
+from utilities import Numeric, dimm, easeOutQuart, generate_brightness_list, mix
 
 _metadata = {
     'name': 'Notification Cheevo',
     'reqs': [],
-    'duration': 160
+    'duration': 150
 }
 
 class Effect(BaseEffect):
     def __init__(self, dev: Device, initial_tick: int) -> None:
         super().__init__(dev, initial_tick)
-        self.table = generate_brightness_list(40, 255)
     
     def apply(self, t, palettes):
         t = t-self._TICK + 0
         if t < 30:
-            c = dimm([255,255,255], min(t/20, 1))
+            c = dimm([1,1,1], min(t/20, 1))
             for z in self.dev.Z.Rings:
                 _p = easeOutQuart((t*10) / 360)
                 for x in range(z.COUNT):
@@ -32,17 +32,17 @@ class Effect(BaseEffect):
         
             for z in self.dev.Z.Leds:
                 z.all(c)
-        else:
+        elif t < 140:
             t = t-30
-            _p = self.table[min(t, len(self.table)-1)] / 255
-            c1 = [200, 150, 0]
-            c2 = [0, 0, 255]
-            if t < len(self.table):
-                _p = self.table[-min(t+1, len(self.table))] / 255
-                c1 = mix(c1, 1-_p, [255,255,255], _p)
-                c2 = mix(c2, 1-_p, [255,255,255], _p)
+            _p = t/40
+            c1:Color = [0.8, 0.6, 0]
+            c2:Color = [0.2, 0.2, 1]
+            if t < 40:
+                _p = 1 - min(t/20, 1)
+                c1 = mix(c1, 1-_p, [1,1,1], _p)
+                c2 = mix(c2, 1-_p, [1,1,1], _p)
             elif t > 90:
-                _p = self.table[-min(t-90, len(self.table))] / 255
+                _p = 1 - (t-90) / 20
                 c1 = mix([0,0,0], 1-_p, c1, _p)
                 c2 = mix([0,0,0], 1-_p, c2, _p)
             td = -1*(t * 400)**0.75
@@ -59,6 +59,8 @@ class Effect(BaseEffect):
                     else:
                         __p = ((ag - 320) / 40) % 1
                         z[x] = mix(c1, __p, c2, 1-__p)
+        else:
+            self.dev.Raw.all([0,0,0])
     
     def framekey(self, t):
         return t

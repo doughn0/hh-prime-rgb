@@ -5,9 +5,9 @@ from colors import get_palette
 
 CONFIG = {
     "fps": 30,
-    "mode": "stick_chase",
+    "mode": "null",
     "brightness": 14,
-    "palette": [[255, 0, 255], [0, 255, 255]],
+    "palette": [[0, 0, 0], [0, 0, 0]],
     "palette_swap": False,
     "palette_swap_secondary": False,
     "speed": 0
@@ -82,17 +82,20 @@ def get_param(key):
     return os.popen('batocera-settings-get '+key).read().strip()
 
 def refresh(key:str|None=None):
-    if key is None or key == KEY_LED_MODE:
-        val = get_param(KEY_LED_MODE)
-        CONFIG['mode'] = mode_map[val]
-    
-    if key is None or key == KEY_LED_BRIGHTNESS:
-        val = get_param(KEY_LED_BRIGHTNESS)
-        CONFIG['brightness'] = (int(val) // 7)
-    
-    if key is None or key == KEY_LED_COLOUR:
-        val1, val2, val3 = [int(x) for x in get_param(KEY_LED_COLOUR).split()]
-        sp = palettes[(val1//10)%len(palettes)]
-        CONFIG['palette'] = get_palette('-'.join(sp))
-        CONFIG['palette_swap'] = val2 > 0
-        CONFIG['palette_swap_secondary'] = val3 > 0
+    try:
+        if key is None or key == KEY_LED_MODE:
+            val = get_param(KEY_LED_MODE)
+            CONFIG['mode'] = mode_map[val]
+        
+        if key is None or key == KEY_LED_BRIGHTNESS:
+            val = get_param(KEY_LED_BRIGHTNESS)
+            CONFIG['brightness'] = 40 + int(int(val) * 0.6)
+        
+        if key is None or key == KEY_LED_COLOUR:
+            val1, val2, val3 = [int(x) for x in get_param(KEY_LED_COLOUR).split()]
+            sp = palettes[(val1//10)%len(palettes)]
+            CONFIG['palette'] = get_palette('-'.join(sp))
+            CONFIG['palette_swap'] = val2 > 0
+            CONFIG['palette_swap_secondary'] = val3 > 0
+    except:
+        pass
