@@ -1,5 +1,5 @@
 {
-    "driver": "h700",
+    "driver": "anbernic_h700",
     "leds": 16,
     "target_fps": 30,
     "zones": {

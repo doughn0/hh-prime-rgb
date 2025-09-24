@@ -6,7 +6,7 @@ from importlib import import_module
 
 dirname = os.path.dirname(os.path.abspath(__file__)) + '/effects'
 
-print('\nLoding Effects:\n')
+print('\nLoading Effects:\n')
 
 for f in os.listdir(dirname):
     if f[0] != '_' and os.path.isfile("%s/%s" % (dirname, f)) and f[-3:] == ".py":

@@ -1,5 +1,5 @@
 {
-    "driver": "a133",
+    "driver": "trimui_a133p",
     "driver_extra_params": {
         "rgb_order": [2,1,0],
         "patchtable": [

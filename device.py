@@ -1,14 +1,13 @@
 import json
 import confloader
+import os
+from importlib import import_module
 
 config = json.load(open('device_configs/'+confloader.identify_device()+'.json'))
 
-if config['driver'] == 'a133':
-    from drivers.a133.RGBDriver import RGBDriver
-if config['driver'] == 'h700':
-    from drivers.h700.RGBDriver import RGBDriver
+RGBDriver = import_module("drivers."+config['driver']).RGBDriver
 
-print("Loaded Driver:", RGBDriver) # pyright: ignore[reportPossiblyUnboundVariable]
+print("Loaded Driver:", config['driver']) # pyright: ignore[reportPossiblyUnboundVariable]
 
 class Device:
     def __init__(self) -> None:
@@ -67,7 +66,7 @@ class Device:
         return False
 
     def render(self):
-        return self.driver.render([int(a*a*self.BR*255+0.4) for a in self.FB0])
+        return self.driver.render([int(a*a*self.BR*255+0.49) for a in self.FB0])
         
     def write(self) -> None:
         bytestream = self.CACHED_BYTESTREAM

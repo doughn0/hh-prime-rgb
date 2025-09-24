@@ -61,7 +61,7 @@ mode_map = {
     '0' : 'null',
     '1' : 'static',
     '2' : 'shimmer',
-    '3' : 'stick_chase',
+    '3' : 'input_fade',
     '4' : 'wave',
     '5' : 'rainbow',
     '6' : 'null'

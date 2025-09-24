@@ -34,26 +34,18 @@ class StickState:
         self._smoothing = True
         self._axis_cache = {axis_id: [stick_id, i] for stick_id in self.__state for i, axis_id in enumerate(config[stick_id]['input'])}
     
-    def update(self, smooth_only:bool):
-        if not smooth_only:
-            try:
-                while True:
-                    event_data = os.read(self._js0, JS_EVENT_SIZE)
-                    _, e_value, e_type, e_number = struct.unpack(JS_EVENT_FORMAT, event_data)
+    def update(self):
+        try:
+            while True:
+                event_data = os.read(self._js0, JS_EVENT_SIZE)
+                _, e_value, e_type, e_number = struct.unpack(JS_EVENT_FORMAT, event_data)
 
-                    if (e_type == JS_EVENT_AXIS):
-                        self._smoothing = True
-                        self.calc(e_number, int(e_value // 256))
-            except:
-                pass
-
-        if self._smoothing:
-            for zone in self.__state:
-                if self.__state[zone]['value'] > 0.2:
-                    self._state[zone]['angle'] = int(self.__state[zone]['angle'] / 5) * 5
-                self._state[zone]['value'] = self.__state[zone]['value']*0.15 + self._state[zone]['value'] * 0.85
+                if (e_type == JS_EVENT_AXIS):
+                    self._smoothing = True
+                    self.calc(e_number, int(e_value // 256))
+        except:
+            pass
         
-
     def calc(self, id, value):
         stick, axis = self._axis_cache[id]
 
@@ -65,4 +57,4 @@ class StickState:
         self.__state[stick]['value'] = 1 if raw_value > 125 else raw_value / 125
     
     def __getitem__(self, name:str) -> dict:
-        return self._state[name]
+        return self.__state[name]

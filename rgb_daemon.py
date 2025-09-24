@@ -1,6 +1,4 @@
-from device import Device
 from time import time_ns, sleep
-from effects.stick_chase import Effect
 import threading
 from api import run_api
 from state import RGBState
