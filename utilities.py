@@ -61,6 +61,9 @@ sin100_t = [sin(i/100 * pi) for i in range(200)]
 def sin100(i):
     return sin100_t[i%200]
 
+def sin100_(i):
+    return (sin100_t[i%200] + 1) / 2
+
 def hsv_fl(h: Numeric, s: Numeric, v: Numeric) -> Color:
     if s:
         if h == 1.0:

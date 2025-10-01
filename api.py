@@ -8,18 +8,18 @@ STATE = RGBState.get()
 
 presets = {
     'battery_charging': [
-        Event(EventType.RunEffect, 'noti_up', 3, GREEN),
+        Event(EventType.Notification, 'up', 3, GREEN),
     ],
     'battery_full': [
-        Event(EventType.RunEffect, 'noti_up', 1, GREEN),
-        Event(EventType.RunEffect, 'noti_round', 1, GREEN),
-        Event(EventType.RunEffect, 'noti_blink_off', 1, GREEN),
+        Event(EventType.Notification, 'up', 1, GREEN),
+        Event(EventType.Notification, 'round', 1, GREEN),
+        Event(EventType.Notification, 'blink_off', 1, GREEN),
     ],
     'battery_low': [
-        Event(EventType.RunEffect, 'noti_blink', 3, RED),
+        Event(EventType.Notification, 'blink', 3, RED),
     ],
     'cheevo': [
-        Event(EventType.RunEffect, 'noti_cheevo', 1),
+        Event(EventType.Notification, 'cheevo', 1),
     ]
 }
 
@@ -29,7 +29,7 @@ def run_preset_effect(preset):
         STATE.events.append(deepcopy(e))
     STATE.events.append(Event(EventType.FadeIn))
 
-@get("/reload-config")
+@route("/reload-config")
 def json():
     STATE.events.append(Event(EventType.LoadConfig))
     return ""
@@ -50,23 +50,31 @@ def animation():
         try:
             if len(req_):
                 STATE.events.append(Event(EventType.FadeOut))
-                STATE.events.append(Event(EventType.RunEffect, req_[0], int(req_[1]), Palette(hex_to_rgb(req_[2]))))
         except Exception as e:
             return "Error while processing Command:\n[name] [count] [hex_color]\n"
     return ""
 
 
-batt_last = ''
 @route("/update-battery-state", method='POST')
 def battery():
-    global batt_last
     req = request.body.read().decode().split() # pyright: ignore[reportAttributeAccessIssue]
-    if req[1] != batt_last and req[1] == 'Charging':
-        run_preset_effect(presets['battery_charging'])
-    if req[1] != batt_last and req[1] == 'Full':
-        run_preset_effect(presets['battery_full'])
-    batt_last = req[1]
-    pass
+    STATE.DEV.BATTERY['percentage'] = int(req[0])
+
+    last_state = STATE.DEV.BATTERY['state']
+
+    if False: # notification mode
+        if req[1] != last_state and req[1] == 'Charging':
+            run_preset_effect(presets['battery_charging'])
+        if req[1] != last_state and req[1] == 'Full':
+            run_preset_effect(presets['battery_full'])
+        STATE.DEV.BATTERY['state'] = req[1]
+    else:
+        if req[1] != last_state:
+            if req[1] == 'Charging':
+                STATE.events.append(Event(EventType.AddLayer, 'charging'))
+            else:
+                STATE.events.append(Event(EventType.RemoveLayer, 'charging'))
+
 
 @route("/update-screen-state", method='POST')
 def screen():

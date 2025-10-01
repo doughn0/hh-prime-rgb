@@ -6,7 +6,7 @@ from colors import get_palette
 CONFIG = {
     "fps": 30,
     "mode": "null",
-    "brightness": 14,
+    "brightness": 100,
     "palette": [[0, 0, 0], [0, 0, 0]],
     "palette_swap": False,
     "palette_swap_secondary": False,
@@ -59,12 +59,12 @@ KEY_LED_BATTERY_CHARGING_ENABLED="led.battery.charging"
 
 mode_map = {
     '0' : 'null',
-    '1' : 'static',
+    '1' : 'framebuffer',
     '2' : 'shimmer',
     '3' : 'input_fade',
     '4' : 'wave',
     '5' : 'rainbow',
-    '6' : 'null'
+    '6' : 'static'
 }
 
 def identify_device():

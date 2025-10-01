@@ -2,7 +2,7 @@ from enum import Enum
 import json
 from colors import BLUE, GREEN, RED, WHITE, Palette
 from device import Device
-from effect_store import STORE
+from effects.effect_store import MODES, NOTIS, STATES
 from effects._base_effect import BaseEffect
 from utilities import generate_brightness_list
 from confloader import CONFIG, refresh as conf_refresh
@@ -29,13 +29,13 @@ class RGBState:
         self.FRTM = int(1000 / self.FPS)
 
         self._mode = 'static'
-        self.modes:list[BaseEffect] = [STORE['static']['class'](self.DEV, self._tick)]
+        self.modes:list[BaseEffect] = [MODES['static']['class'](self.DEV, self._tick)]
         self.events:list[Event] = [
-            #Event(EventType.RunEffect, 'noti_up', 1, RED),
-            #Event(EventType.RunEffect, 'noti_up', 1, GREEN),
-            #Event(EventType.RunEffect, 'noti_up', 1, BLUE),
-            Event(EventType.RunEffect, 'noti_round', 1, WHITE),
-            Event(EventType.RunEffect, 'noti_blink_off', 1, WHITE),
+            #Event(EventType.RunEffect, 'up', 1, RED),
+            #Event(EventType.RunEffect, 'up', 1, GREEN),
+            #Event(EventType.RunEffect, 'up', 1, BLUE),
+            Event(EventType.Notification, 'round', 1, WHITE),
+            Event(EventType.Notification, 'blink_off', 1, WHITE),
             Event(EventType.FadeIn)
         ]
     
@@ -72,21 +72,36 @@ class RGBState:
                     event.timer -= 1
                     if event.timer == 0:
                         self.events.pop(0)
+            if event.type == EventType.AddLayer:
+                running = False
+                for i in range(len(self.modes)):
+                    if self.modes[i].__class__ is STATES[event.payload]['class']:
+                        running = True
+                if not running:
+                    self.modes.append(STATES[event.payload]['class'](self.DEV, self._tick))
+                self.events.pop(0)
+            if event.type == EventType.RemoveLayer:
+                for i in range(len(self.modes)):
+                    if self.modes[i].__class__ is STATES[event.payload]['class']:
+                        self.modes.pop(i)
+                        self.DEV.nuke_savestates()
+                        self._target_tr = MAX_BR
+                self.events.pop(0)
             if event.type == EventType.ChangeMode:
-                self.modes[0] = STORE[event.payload]['class'](self.DEV, self._tick)
+                self.modes[0] = MODES[event.payload]['class'](self.DEV, self._tick)
                 self._tr = 0
                 self.events.pop(0)
                 self.DEV.nuke_savestates()
                 self.events.append(Event(EventType.FadeIn))
-            if event.type == EventType.RunEffect:
+            if event.type == EventType.Notification:
                 if not event.running:
                     self.DEV.nuke_savestates()
                     self._tr = MAX_BR
                     self._target_tr = MAX_BR
                     self.apply_brightness()
                     event.running = True
-                    self.modes.append(STORE[event.payload]['class'](self.DEV, self._tick))
-                    event.timer = event.repeat * STORE[event.payload]['metadata']['duration']
+                    self.modes.append(NOTIS[event.payload]['class'](self.DEV, self._tick))
+                    event.timer = event.repeat * NOTIS[event.payload]['metadata']['duration']
                 else:
                     event.timer -= 1
                     if event.timer == 0:
@@ -176,12 +191,14 @@ class RGBState:
 _INSTANCE:RGBState|None = None
 
 class EventType(Enum):
-    Die = -1
-    LoadConfig = 0
-    ChangeMode = 1
-    RunEffect = 5
-    FadeOut = 10
-    FadeIn = 11
+    Die = 'die'
+    LoadConfig = 'load_config'
+    ChangeMode = 'change_mode'
+    AddLayer = 'add_layer'
+    RemoveLayer = 'remove_layer'
+    Notification = 'notification'
+    FadeOut = 'fadeout'
+    FadeIn = 'fadein'
 
 class Event:
     def __init__(self, type:EventType, payload:str='', repeat:int=1, palette:Palette|None=None) -> None:

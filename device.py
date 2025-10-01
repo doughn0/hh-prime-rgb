@@ -18,6 +18,11 @@ class Device:
         self.FB0 = [0, 0, 0] * config['leds']
         self.BR:float = 100
 
+        self.BATTERY = {
+            'percentage': 0,
+            'state': ''
+        }
+
         self.nuke_savestates()
     
         self.driver = RGBDriver(config.get('driver_extra_params', {})) # pyright: ignore[reportPossiblyUnboundVariable]
