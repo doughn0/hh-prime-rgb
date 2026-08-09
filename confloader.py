@@ -1,7 +1,7 @@
 import os
 import re
 
-from .colors import PALETTES, get_palette
+from .colors import COLORS, PALETTES
 from .effects.effect_store import MODES
 
 CONFIG = {
@@ -9,10 +9,11 @@ CONFIG = {
     "mode": "shimmer",
     "brightness": 100,
     "brightness.adaptive": False,
-    "palette": "Knulli",
-    "palette.mod": 'none',
-    "palette.invert": False,
-    "palette.invert.secondary": False,
+    "color.palette": "Knulli",
+    "color.primary": None,
+    "color.secondary": None,
+    "color.mod": 'none',
+    "color.invert.secondary": False,
     "retroachievements": True,
     "battery.low": "continuous",
     "battery.low.threshold": 20,
@@ -30,17 +31,23 @@ conf_map = {
     "brightness.adaptive": {
         "type": "bool"
     },
-    "palette": {
+    "color.palette": {
+        "type": "string",
+        "reqs": ['supports_dual_colors']
+    },
+    "color.primary": {
         "type": "string"
     },
-    "palette.mod": {
+    "color.secondary": {
+        "type": "string",
+        "reqs": ['supports_dual_colors']
+    },
+    "color.mod": {
         "type": "enum",
-        "values": ["none", "twilight", "sparkle", "haze"]
+        "values": ["none", "twilight", "sparkle", "haze"],
+        "reqs": ['supports_silky_modes']
     },
-    "palette.invert": {
-        "type": "bool"
-    },
-    "palette.invert.secondary": {
+    "color.invert.secondary": {
         "type": "bool",
         "reqs": ['has_secondary']
     },
@@ -78,14 +85,25 @@ def bounds(val, bounds):
 
 def set_option(key:str, val:str):
     try:
-        if key == "mode":
-            if val in MODES:
-                CONFIG["mode"] = val
 
-        if key == "palette":
+        if key == "color.palette":
             if val in PALETTES:
-                CONFIG["palette"] = val
+                CONFIG["color.palette"] = val
+            elif val == 'Custom':
+                CONFIG["color.palette"] = None
+        if key == "color.primary":
+            if val in COLORS:
+                CONFIG["color.primary"] = val
 
+        if key == "color.secondary":
+            if val in COLORS:
+                CONFIG["color.secondary"] = val
+
+        if key == "mode":
+            if not val in MODES:
+                print(f"Warning: Attempting to run nonexisting mode {val}.")
+            CONFIG["mode"] = val
+            
         if key == "brightness":
             if val.isnumeric() and bounds(int(val), conf_map['brightness']['range']):
                 CONFIG["brightness"] = int(val)
@@ -93,15 +111,12 @@ def set_option(key:str, val:str):
         if key == "brightness.adaptive":
             CONFIG["brightness.adaptive"] = val == '1'
 
-        if key == "palette.invert":
-            CONFIG["palette.invert"] = val == '1'
+        if key == "color.mod":
+            if val in conf_map['color.mod']['values']:
+                CONFIG["color.mod"] = val
 
-        if key == "palette.mod":
-            if val in conf_map['palette.mod']['values']:
-                CONFIG["palette.mod"] = val
-
-        if key == "palette.invert.secondary":
-            CONFIG["palette.invert.secondary"] = val == '1'
+        if key == "color.invert.secondary":
+            CONFIG["color.invert.secondary"] = val == '1'
 
         if key == "battery.charging":
             if val in conf_map['battery.charging']['values']:
@@ -115,5 +130,6 @@ def set_option(key:str, val:str):
             if val.isnumeric() and bounds(int(val), conf_map['battery.low.threshold']['range']):
                 CONFIG["battery.low.threshold"] = int(val)
 
-    except:
-        pass
+    except Exception as e:
+        # Temporarily print the error so you can see if it's a circular import
+        print(f"DEBUG: set_option error: {e}")

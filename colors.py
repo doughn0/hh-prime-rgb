@@ -41,7 +41,7 @@ class Palette():
             self.bg = [a for a in p2.bg]
             self.fg = [a for a in p2.fg]
         return True
-    
+
     def __str__(self) -> str:
         return f"P( {str(self.bg)} {str(self.fg)} )"
 
@@ -52,20 +52,18 @@ AMBER = Palette([1,0.8,0])
 WHITE = Palette([1,1,1])
 BLACK = Palette([0,0,0])
 
-colors = {
+COLORS = {
     # Original Set
     'Cyan': [0.0, 0.7843, 0.7843],
     'Aqua': [0.1, 0.6, 0.92],
     'Magenta': [1.0, 0.0, 0.7059],
     'Green': [0.0, 1.0, 0.0],
-    'Blue': [0.0, 0.1961, 1.0],
-    'PBlue': [0.0, 0.0, 1.0],
+    'Blue': [0.0, 0.0, 1.0],
     'Violet': [0.2941, 0.0, 1.0],
     'Yellow': [1.0, 0.7843, 0.0],
     'Gold': [1.0, 0.75, 0.0],
     'Silver': [0.8, 0.8, 0.9],
-    'Red': [1.0, 0.0196, 0.0],
-    'PRed': [1.0, 0.0, 0.0],
+    'Red': [1.0, 0.0, 0.0],
     'Pink': [1.0, 0.4, 0.6],
     'White': [1.0, 1.0, 1.0],
     'Black': [0.0, 0.0, 0.0],
@@ -87,7 +85,7 @@ colors = {
     'Warm White': [1.0, 0.9608, 0.902],
     'Ice White': [0.902, 0.9804, 1.0],
     'Knulli Light Green': [0.43, 1.0, 0.0],
-    'Knulli Dark Green': [0.08, 0.47, 0.02],
+    'Knulli Golden Moss': [0.60, 0.85, 0.0],
 
     'Off': [0.0, 0.0, 0.0]
 }
@@ -108,15 +106,15 @@ PALETTES = {
     #'Scarlet Surge': ['Scarlet', 'Aqua'],
 
     # Green Coded
-    'Knulli': ['Knulli Dark Green', 'Knulli Light Green'],
+    'Knulli': ['Knulli Light Green', 'Knulli Golden Moss'],
     'Knulli Silver': ['Knulli Light Green', 'Silver'],
     'Spring Meadow': ['Spring Green', 'Yellow'],
     'Forrest': ['Lime Green', 'Deep Green'],
-    
+
     # Fun & Sweet
     #'Cotton Candy': ['Pink', 'Sky Blue'],
     #'Bubblegum': ['Pink', 'Aqua'], # there are a few like this
-    
+
     # Vibrant
     'Orchid': ['Magenta', 'Violet'],
     'Cyberpunk': ['Fuchsia', 'Cyan'],
@@ -135,11 +133,11 @@ def get_palette(S:str) -> list[Color]:
     colors_ = S.split("-")
     if(len(colors_) == 1):
         c1 = colors_[0]
-        ret = [colors[c1], colors[c1]]
+        ret = [COLORS[c1], COLORS[c1]]
         return ret
     if(len(colors_) == 2):
         c1 = colors_[0]
         c2 = colors_[1]
-        ret = [colors[c1], colors[c2]]
+        ret = [COLORS[c1], COLORS[c2]]
         return ret
     return [[0,0,0], [0,0,0]]

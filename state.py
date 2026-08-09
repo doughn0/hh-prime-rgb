@@ -1,6 +1,7 @@
 from enum import Enum
 import json
-from .colors import BLACK, BLUE, GREEN, RED, WHITE, PALETTES, Palette, get_palette
+
+from .colors import BLACK, BLUE, COLORS, GREEN, RED, WHITE, PALETTES, Palette, get_palette
 from .device import Device
 from .effects.effect_store import MODES, NOTIS, STATES
 from .effects._base_effect import BaseEffect
@@ -60,6 +61,12 @@ class RGBState:
                 print(f"[state] LoadConfig")
                 self.load_config()
                 self.events.pop(0)
+                if "has_hw_modes" in self.DEV.TRAITS and hasattr(self.DEV.driver, "sync"):
+                    # Force variables to target so the first frame isn't black/wrong
+                    self._br = self._target_br
+                    self._tr = MAX_BR 
+                    self.apply_brightness()
+                    self.DEV.driver.sync(self)
                 return True
             if event.type == EventType.Die:
                 print(f"[state] Die")
@@ -125,7 +132,17 @@ class RGBState:
 
             if event.type == EventType.ChangeMode:
                 print(f"[state] ChangeMode [{event.payload}]")
-                self.modes[0] = MODES[event.payload]['class'](self.DEV, self._tick)
+                self._mode = event.payload
+
+                # 1. Check if it's a standard software mode
+                if event.payload in MODES:
+                    self.modes[0] = MODES[event.payload]['class'](self.DEV, self._tick)
+                
+                # 2. Check if it's a hardware-specific mode supported by the driver
+                elif hasattr(self.DEV.driver, 'HW_MODES') and event.payload in self.DEV.driver.HW_MODES:
+                    # Instantiate the HW mode class and put it in the active modes list
+                    self.modes[0] = MODES['static']['class'](self.DEV, self._tick)
+
                 self._tr = 0
                 self.events.pop(0)
                 self.DEV.nuke_savestates()
@@ -200,23 +217,44 @@ class RGBState:
 
         self._target_br = 40 + int(CONFIG['brightness'] * 0.6) 
 
-        raw_palette = get_palette('-'.join(PALETTES[CONFIG['palette']]))
+        raw_palette = [[0,0,0], [0,0,0]]
+        if CONFIG['color.palette'] is not None:
+            raw_palette = get_palette('-'.join(PALETTES[CONFIG['color.palette']]))
+        if CONFIG['color.primary'] is not None:
+            raw_palette[0] = COLORS[CONFIG['color.primary']]
+        if CONFIG['color.secondary'] is not None:
+            raw_palette[1] = COLORS[CONFIG['color.secondary']]
         self._target_palette = [Palette(*raw_palette), Palette(*raw_palette)]
-        if CONFIG['palette.invert']:
-            self._target_palette = [p.swap() for p in self._target_palette]
-        if CONFIG['palette.invert.secondary']:
+        if CONFIG['color.invert.secondary']:
             self._target_palette[1] = self._target_palette[1].swap()
-        if CONFIG['palette.mod'] == 'twilight':
+        if CONFIG['color.mod'] == 'twilight':
             self._target_palette[0].bg = [.0,.0,.0]
             self._target_palette[1].bg = [.0,.0,.0]
-        if CONFIG['palette.mod'] == 'sparkle':
+        if CONFIG['color.mod'] == 'sparkle':
             self._target_palette[0].fg = mix([1.0,1.0,1.0], 0.7, self._target_palette[0].bg, 0.3)
             self._target_palette[1].fg = mix([1.0,1.0,1.0], 0.7, self._target_palette[1].bg, 0.3)
-        if CONFIG['palette.mod'] == 'haze':
+        if CONFIG['color.mod'] == 'haze':
             self._target_palette[0].bg = mix([.7,.7,.7], 0.7, self._target_palette[0].fg, 0.2)
             self._target_palette[1].bg = mix([.7,.7,.7], 0.7, self._target_palette[1].fg, 0.2)
         if not CONFIG['brightness.adaptive']:
             self._target_sc = MAX_BR
+
+        # If the driver has a sync method, we call it now to init the hardware state
+        if "has_hw_modes" in self.DEV.TRAITS: #
+            # 1. Update the actual palette used by the driver to the one we just calculated
+            self._palette = [self._target_palette[0], self._target_palette[1]] #
+            
+            # 2. Slam the brightness/scale to targets (bypassing smooth_conf)
+            self._br = self._target_br #
+            self._sc = self._target_sc #
+            self._tr = MAX_BR # Force transparency to 100% so it's not "fading in"
+            self.apply_brightness() #
+
+            # 3. Now sync the hardware while the variables are exactly where they need to be
+            if hasattr(self.DEV.driver, "sync"): #
+                print(f"[state] Hardware Sync: Mode={self._mode} BR={self._br}") #
+                self.DEV.driver.sync(self) #
+
     
     def apply_brightness(self):
         self.DEV.BR = self._tr*self._tr*self._br*self._br*self._sc / (100**5)
